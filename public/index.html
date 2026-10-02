@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <title>Artículos DDS</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 720px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #ddd; }
+    .bajo { color: #b91c1c; font-weight: 700; }
+    #error { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>Artículos</h1>
+
+  <input id="busqueda" placeholder="Buscar por nombre...">
+  <button id="btnBuscar">Buscar</button>
+  <button id="btnStockBajo">Solo stock bajo</button>
+
+  <p id="error"></p>
+  <table>
+    <thead><tr><th>Nombre</th><th>Precio</th><th>Stock</th></tr></thead>
+    <tbody id="cuerpo"></tbody>
+  </table>
+
+  <script>
+    const API = "/api/articulos";
+
+    function dibujar(articulos) {
+      document.getElementById("cuerpo").innerHTML = articulos
+        .map((a) => `<tr>
+            <td>${a.nombre}</td>
+            <td>$${a.precio.toLocaleString("es-AR")}</td>
+            <td class="${a.stock < 5 ? "bajo" : ""}">${a.stock}</td>
+          </tr>`)
+        .join("");
+    }
+
+    async function pedir(url) {
+      document.getElementById("error").textContent = "";
+      try {
+        const respuesta = await fetch(url);
+        const datos = await respuesta.json();
+        if (!respuesta.ok) throw new Error(datos.mensaje);
+        dibujar(Array.isArray(datos) ? datos : datos.items);
+      } catch (error) {
+        document.getElementById("error").textContent = "No se pudo cargar: " + error.message;
+      }
+    }
+
+    document.getElementById("btnBuscar").onclick = () =>
+      pedir(`${API}?nombre=${encodeURIComponent(document.getElementById("busqueda").value)}&limite=20`);
+
+    document.getElementById("btnStockBajo").onclick = () => pedir(`${API}/stock-bajo`);
+
+    pedir(`${API}?limite=20`);
+  </script>
+</body>
+</html>
